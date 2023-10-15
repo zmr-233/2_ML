@@ -1,4 +1,7 @@
-from tqdm import tqdm
+#from tqdm import tqdm
+#debug+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+from tqdm.notebook import tqdm #推荐在jupyter中使用自带的进度条
+#debug+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 import numpy as np
 import torch
 import collections
@@ -117,6 +120,9 @@ def train_on_policy_agent(env, agent, s_epoch, total_epochs, s_episode, total_ep
                 }, ckp_path)
 
                 pbar.update(1)
+            #debug:+++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            picture_return(return_list, 'A2C', 'CartPole-v1', 9)
+            #debug:+++++++++++++++++++++++++++++++++++++++++++++++++++++++
             s_episode = 0
     try:
         agent.actor.load_state_dict(actor_best_weight)
