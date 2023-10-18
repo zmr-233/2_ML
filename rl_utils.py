@@ -1,6 +1,6 @@
-#from tqdm import tqdm
+from tqdm import tqdm
 #debug+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-from tqdm.notebook import tqdm #推荐在jupyter中使用自带的进度条
+#from tqdm.notebook import tqdm #推荐在jupyter中使用自带的进度条
 #debug+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 import numpy as np
 import torch
@@ -121,7 +121,7 @@ def train_on_policy_agent(env, agent, s_epoch, total_epochs, s_episode, total_ep
 
                 pbar.update(1)
             #debug:+++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            picture_return(return_list, 'A2C', 'CartPole-v1', 9)
+            #picture_return(return_list, 'A2C', 'CartPole-v1', 9)
             #debug:+++++++++++++++++++++++++++++++++++++++++++++++++++++++
             s_episode = 0
     try:
