@@ -3,3 +3,10 @@
 ML_practice/
 
 T_PyTorch
+
+**/gym-0.20.0
+
+
+*.out.*
+
+**/*.pyc

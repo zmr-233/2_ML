@@ -24,7 +24,7 @@ import time
 #from .. import rl_utils as rlu
 import rl_utils as rlu
 from torch.utils.tensorboard import SummaryWriter
-writer = SummaryWriter("1_PPO_GAIL/") 
+writer = SummaryWriter("1_PPO_GAIL/log/") 
 
 deb = True
 is_bc = False
@@ -82,12 +82,11 @@ class PPO:
         self.eps = eps #BUG:???eps
         self.device = device
     
-    def take_action(self,state):
-        #state = torch.tensor(state,dtype=torch.float).to(self.device) #BUG:++++++++np.array(state)
+    def take_action(self,state): 
         state = torch.tensor(np.array(state),dtype=torch.float).to(self.device) 
         probs = self.actor(state)
-        action_dist = torch.distributions.Categorical(probs) #BUG:?
-        action = action_dist.sample().item() #BUG:?
+        action_dist = torch.distributions.Categorical(probs) 
+        action = action_dist.sample().item()
         return action
     
     def update(self,transition_dict):
@@ -162,8 +161,8 @@ action_dim = env.action_space.n #BUG:????+++++++动作空间
 
 agent = PPO(state_dim,hidden_dim,action_dim,gamma,lmbda,epochs,actor_lr,critic_lr,eps,device)
 
-CKP_PATH = '1_PPO_GAIL/tmp/E_v1.pt'
-BEST_CKP_PATH = '1_PPO_GAIL/output/E_v1.pt'
+CKP_PATH = '1_PPO_GAIL/tmp/E_v2.pt'
+BEST_CKP_PATH = '1_PPO_GAIL/output/E_v2.pt'
 
 def read_ckp(agent,CKP_PATH):
     if os.path.exists(CKP_PATH):
@@ -182,7 +181,9 @@ def save_ckp(data, PATH):
     os.makedirs(os.path.dirname(PATH), exist_ok=True)  # 确保路径存在
     torch.save(data, PATH)
 
-s_epoch,s_episode,return_list = read_ckp(agent,BEST_CKP_PATH)
+#s_epoch,s_episode,return_list = read_ckp(agent,BEST_CKP_PATH)
+s_epoch,s_episode,return_list = read_ckp(agent,CKP_PATH)
+rlu.picture_return(return_list,"PPO","CarPort-v1",9)
 
 #s_epoch = 0
 #s_episode = 0
@@ -220,7 +221,7 @@ def train_on_policy(writer,env,agent,s_epoch,total_epochs,s_episode,total_episod
                     pbar.set_postfix({'episode': '%d' % (total_episodes * epoch + episode + 1),
                                       'recent_return': '%.3f' % np.mean(return_list[-10:])})
 
-                if episode_return > best_score:
+                if episode_return >= best_score:
                     actor_best_weight = agent.actor.state_dict() #BUG:???
                     critic_best_weight = agent.critic.state_dict()
                     best_score = episode_return
@@ -532,8 +533,8 @@ gail_lr = 1e-3
 gail = GAIL(state_dim,hidden_dim,action_dim,new_agent,gail_lr,device)
 
 
-new_CKP_PATH = '1_PPO_GAIL/tmp/GAIL_new_v1.pt'
-new_BEST_CKP_PATH = '1_PPO_GAIL/output/GAIL_new_v1.pt'
+new_CKP_PATH = '1_PPO_GAIL/tmp/GAIL_new_v3.pt'
+new_BEST_CKP_PATH = '1_PPO_GAIL/output/GAIL_new_v3.pt'
 
 n_s_epoch,n_s_episode,n_return_list = read_ckp(new_agent,new_CKP_PATH)
 n_total_epochs = 5
@@ -542,6 +543,6 @@ n_total_episodes = 200
 #                  n_return_list,new_CKP_PATH,new_BEST_CKP_PATH)
 
 rlu.picture_return(n_return_list,"GAIL","CarPort-v1",9)
-        
+
 
 

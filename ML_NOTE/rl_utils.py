@@ -1,7 +1,4 @@
-#from tqdm import tqdm
-#debug+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-from tqdm.notebook import tqdm #推荐在jupyter中使用自带的进度条
-#debug+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+from tqdm import tqdm
 import numpy as np
 import torch
 import collections
@@ -21,9 +18,8 @@ class ReplayBuffer:
     def __init__(self, capacity):
         self.buffer = collections.deque(maxlen=capacity)
 
-    def add(self, state, action, reward, next_state, done, truncated):
-        self.buffer.append(
-            (state, action, reward, next_state, done, truncated))
+    def add(self, state:np.ndarray, action:torch.tensor, reward:float, next_state:np.ndarray, done:int, truncated:int):
+        self.buffer.append((state, action, reward, next_state, done, truncated))
 
     def sample(self, batch_size):
         transitions = random.sample(self.buffer, batch_size)
@@ -101,7 +97,7 @@ def train_on_policy_agent(env, agent, s_epoch, total_epochs, s_episode, total_ep
                     episode_return += reward
                 return_list.append(episode_return)
                 agent.update(transition_dict)  # 更新参数
-
+                
                 if (episode + 1) % 10 == 0:
                     pbar.set_postfix({'episode': '%d' % (total_episodes * epoch + episode + 1),
                                       'recent_return': '%.3f' % np.mean(return_list[-10:])})
@@ -120,11 +116,8 @@ def train_on_policy_agent(env, agent, s_epoch, total_epochs, s_episode, total_ep
                 }, ckp_path)
 
                 pbar.update(1)
-            #debug:+++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            #picture_return(return_list, 'A2C', 'CartPole-v1', 9)
-            #debug:+++++++++++++++++++++++++++++++++++++++++++++++++++++++
             s_episode = 0
-    try:
+    try:        
         agent.actor.load_state_dict(actor_best_weight)
         agent.critic.load_state_dict(critic_best_weight)
     except:
@@ -135,7 +128,7 @@ def train_on_policy_agent(env, agent, s_epoch, total_epochs, s_episode, total_ep
     return return_list
 
 
-def train_off_policy_agent(env, agent, s_epoch, total_epochs, s_episode, total_episodes, replay_buffer,
+def train_off_policy_agent(env, agent, s_epoch, total_epochs, s_episode, total_episodes, replay_buffer, 
                            minimal_size, batch_size, return_list, ckp_path, net_num=2):
     '''离线策略, 从经验池抽取, 仅限演员评论员框架
 
@@ -166,17 +159,13 @@ def train_off_policy_agent(env, agent, s_epoch, total_epochs, s_episode, total_e
                 done = truncated = False
                 while not (done | truncated):
                     action = agent.take_action(state)
-                    #++++++++++++++++++++++++++++++++++++++++++
-                    #action = action.argmax(dim=1).item()
-                    #++++++++++++++++++++++++++++++++++++++++++
-                    #DEBUG：DEBUG==========================
                     next_state, reward, done, truncated, _ = env.step(action)
                     replay_buffer.add(state, action, reward, next_state, done, truncated)
                     state = next_state
                     episode_return += reward
                     if replay_buffer.size() > minimal_size:  # 确保先收集到一定量的数据再采样
                         b_s, b_a, b_r, b_ns, b_d, b_t = replay_buffer.sample(batch_size)
-                        transition_dict = {'states': b_s, 'actions': b_a, 'next_states': b_ns,
+                        transition_dict = {'states': b_s, 'actions': b_a, 'next_states': b_ns, 
                                            'rewards': b_r, 'dones': b_d, 'truncated': b_t}
                         agent.update(transition_dict)
                 return_list.append(episode_return)
@@ -188,7 +177,7 @@ def train_off_policy_agent(env, agent, s_epoch, total_epochs, s_episode, total_e
                     else:
                         critic_best_weight = agent.critic.state_dict()
                     best_score = episode_return
-
+                    
                 if net_num == 3:
                     torch.save({
                         'epoch': epoch,
@@ -203,19 +192,16 @@ def train_off_policy_agent(env, agent, s_epoch, total_epochs, s_episode, total_e
                         'epoch': epoch,
                         'episode': episode,
                         'actor_best_weight': actor_best_weight,
-                        'critic_1_best_weight': critic_best_weight,
+                        'critic_1_best_weight': critic_best_weight, 
                         'return_list': return_list,
                         }, ckp_path)
-
+                    
                 if (episode + 1) % 10 == 0:
                     pbar.set_postfix({'episode': '%d' % (total_episodes * epoch + episode + 1),
                                       'recent_return': '%.3f' % np.mean(return_list[-10:])})
                 pbar.update(1)
-            #debug:+++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            picture_return(return_list, 'DDPG', 'Pendulum-v1', 10)
-            #debug:+++++++++++++++++++++++++++++++++++++++++++++++++++++++
             s_episode = 0
-    try:
+    try: 
         agent.actor.load_state_dict(actor_best_weight)
         if net_num == 3:  # TD3和SAC有两个评论员网络
             agent.critic_1.load_state_dict(critic_1_best_weight)
@@ -223,7 +209,7 @@ def train_off_policy_agent(env, agent, s_epoch, total_epochs, s_episode, total_e
         else:
             agent.critic.load_state_dict(critic_best_weight)
     except:
-        raise 'please check file route of checkpoints...'
+        raise 'please check file route of checkpoints...'    
     end_time = time.time()
     print('总耗时: %d分钟' % ((end_time - start_time)/60))
     # 如果检查点保存了回报列表, 可以不返回
@@ -253,7 +239,7 @@ def show_gym_policy(env_name, model, render_mode='human', epochs=10, steps=500, 
     `render_mode`: 渲染模式;\\
     `epochs`: 展示轮数\\
     `steps`: 每轮多少步\\
-    `model_type`: `V`, `AC`或`AC_n`, 即`价值策略`, `演员评论员`或`强制要求无噪音`;\\
+    `model_type`: `V`, `AC`或`AC_n`, 即`价值策略`, `演员评论员`或`强制要求无噪音`;\\    
     `if_return`: 是否返回表, 默认False
     '''
     assert model_type in ['V', 'AC'], '模型类别错误, 应输入 V 或 AC'
